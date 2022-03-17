@@ -1,0 +1,16 @@
+FROM bsycorp/kind:latest-1.21
+
+EXPOSE 8080
+EXPOSE 8081
+
+COPY ./* /
+
+ENV DOCKER_DRIVER overlay2
+
+USER root
+
+RUN ["sudo", "bash", "-c", "/usr/local/bin/dockerd-entrypoint.sh"]
+#RUN ["bash", "-c", "./install-modela.sh"]
+
+RUN /pull-images.sh
+
