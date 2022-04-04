@@ -13,13 +13,13 @@ fi
 #       https://bugs.busybox.net/show_bug.cgi?id=11886
 
 # trim ext4 image file to smaller length if special file is found
-if [ -e /trim-ext4-on-next-start.txt ]; then
-  export TRIM_GIGABYTES=$(cat /trim-ext4-on-next-start.txt)
-  fsck.ext4 -y -f /var-lib-docker.loopback.ext4
-  resize2fs /var-lib-docker.loopback.ext4 ${TRIM_GIGABYTES}G
-  truncate -s ${TRIM_GIGABYTES}G /var-lib-docker.loopback.ext4
-  rm -f /trim-ext4-on-next-start.txt
-fi  
+# if [ -e /trim-ext4-on-next-start.txt ]; then
+#   export TRIM_GIGABYTES=$(cat /trim-ext4-on-next-start.txt)
+#   fsck.ext4 -y -f /var-lib-docker.loopback.ext4
+#   resize2fs /var-lib-docker.loopback.ext4 ${TRIM_GIGABYTES}G
+#   truncate -s ${TRIM_GIGABYTES}G /var-lib-docker.loopback.ext4
+#   rm -f /trim-ext4-on-next-start.txt
+# fi  
 
 # for some reason /etc/fstab entry didn't work
 mount -t ext4 -o loop /var-lib-docker.loopback.ext4 /var-lib-docker

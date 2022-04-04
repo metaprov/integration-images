@@ -1,7 +1,7 @@
 echo "Installing Modela..."
 
 # Wait for Kubernetes to start
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do kubectl get pods --all-namespaces && break || sleep 5; done
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do kubectl get pods --all-namespaces && break || sleep 5; done
 
 /cache-image.sh
 
@@ -12,10 +12,10 @@ cp /root/.modela/bin/modela /usr/local/bin/modela
 # Helm has issues running on containers; we need to retry the command until it works :-(
 function try_add_repo() {
     n=0
-    until [ "$n" -ge 10 ]
+    until [ "$n" -ge 100 ]
     do
         ( helm repo add $1 $2 ) & pid=$!
-        ( sleep 3 && kill -HUP $pid ) 2>/dev/null & watcher=$!
+        ( sleep 5 && kill -HUP $pid ) 2>/dev/null & watcher=$!
         if wait $pid 2>/dev/null; then
             pkill -HUP -P $watcher
             wait $watcher
@@ -48,9 +48,19 @@ while [[ $(kubectl get pods -l app.kubernetes.io/name=modela-control-plane -n mo
 done
 
 helm install modela-default-tenant modela-charts/modela-default-tenant
+sleep 5
+
+echo 'Fixing Minio...'
+apk add coreutils
+apk add jq
+PASS=$(kubectl get secret --namespace modela-system modela-storage-minio -o jsonpath="{.data.root-password}" | base64 --decode)
+kubectl get connection -n default-tenant default-minio -o json | jq '.spec.minio["host"]="modela-storage-minio.modela-system.svc.cluster.local:9000"' | kubectl apply -f -
+kubectl get secret -n default-tenant default-minio-secret -o json | jq --arg enc "$(echo -n $PASS | base64)" '.data["secretKey"]=$enc' | jq --arg enc "$(echo -n admin | base64)" '.data["accessKey"]=$enc' | kubectl apply -f -
+kubectl get secret -n default-tenant default-minio-secret -o json | jq --arg enc "$(echo -n modela-storage-minio.modela-system.svc.cluster.local:9000 | base64)" '.data["host"]=$enc' | kubectl apply -f -
 
 
 cp /supervisord.conf /etc/supervisord.conf
 supervisorctl reread
 supervisorctl update
 supervisorctl start modela
+
